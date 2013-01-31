@@ -4,6 +4,7 @@
 using namespace cocos2d;
 CCTMXTiledMap *map;
 Player *player;
+CCTMXLayer *walls;
 
 CCScene* HelloWorld::scene()
 {
@@ -42,9 +43,11 @@ bool HelloWorld::init()
 		
 		map = CCTMXTiledMap::create("SuperKoalio/level1.tmx");
 		this->addChild(map);
+		walls = map->layerNamed("walls");
 		
 		player =(Player*) CCSprite::create("SuperKoalio/koalio_stand.png");
-	//	player->velocity = ccp(0.0, 0.0);
+		//player->init1();
+
 		player->setPosition(ccp(100,50));
 		map->addChild(player, 15);
 
@@ -106,7 +109,69 @@ bool HelloWorld::init()
 
 void HelloWorld::update(float dt)
 {
-	player->update1(dt);
+	getSurroundingTilesAtPosition(player->getPosition(), walls);
+//	player->update1(dt);
+}
+
+CCPoint tileCoordForPosition(CCPoint position) 
+{
+  float x = floor(position.x / map->getTileSize().width);
+  float levelHeightInPixels = map->getMapSize().height * map->getTileSize().height;
+  float y = floor((levelHeightInPixels - position.y) / map->getTileSize().height);
+  return ccp(x, y);
+}
+
+CCRect tileRectFromTileCoords(CCPoint tileCoords)
+{
+  float levelHeightInPixels = map->getMapSize().height * map->getTileSize().height;
+  CCPoint origin = ccp(tileCoords.x * map->getTileSize().width, levelHeightInPixels - ((tileCoords.y + 1) * map->getTileSize().height));
+  return CCRectMake(origin.x, origin.y, map->getTileSize().width, map->getTileSize().height);
+}
+
+CCArray* HelloWorld::getSurroundingTilesAtPosition(CCPoint position, CCTMXLayer* layer) {
+ 
+  CCPoint plPos = tileCoordForPosition(position); //1
+ 
+  CCArray *gids = CCArray::array(); //2
+ 
+  for (int i = 0; i < 9; i++) { //3
+    int c = i % 3;
+    int r = (int)(i / 3);
+    CCPoint tilePos = ccp(plPos.x + (c - 1), plPos.y + (r - 1));
+ 
+    int tgid = layer->tileGIDAt(tilePos); //4
+ 
+    CCRect tileRect = tileRectFromTileCoords(tilePos); //5
+ 
+	CCDictionary *tileDict = CCDictionary::create();
+ /*                [NSNumber numberWithFloat:tileRect.origin.x], @"x",
+                 [NSNumber numberWithFloat:tileRect.origin.y], @"y",
+                 [NSValue valueWithCGPoint:tilePos],@"tilePos",
+                 nil];*/
+
+	tileDict->setObject(CCString::createWithFormat("%d",tgid), "gid");
+	tileDict->setObject(CCString::createWithFormat("%d",tileRect.origin.x), "x");
+	tileDict->setObject(CCString::createWithFormat("%d",tileRect.origin.y), "y");
+//	tileDict->setObject( tilePos, "tilePos");
+
+    gids->addObject(tileDict);
+ 
+  }
+ 
+  gids->removeObjectAtIndex(4);
+  gids->insertObject(gids->objectAtIndex(2), 6);
+  gids->removeObjectAtIndex(2);
+  gids->exchangeObjectAtIndex(4, 6);
+  gids->exchangeObjectAtIndex(0, 4); //6
+
+  CCObject *obj = NULL;
+  CCARRAY_FOREACH(gids, obj)
+  {
+	  CCDictionary *d = (CCDictionary *)obj;
+		CCLog("%@", d);
+  } //7
+ 
+  return (CCArray *)gids;
 }
 
 void HelloWorld::menuCloseCallback(CCObject* pSender)

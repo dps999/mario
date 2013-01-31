@@ -6,9 +6,24 @@ Player::Player(void)
 	
 }
 
-void Player::create(const char *name)
+void Player::init1()
 {
-	velocity = ccp(0.0, 0.0);
+	this->velocity = ccp(0.0, 0.0);
+}
+
+//Player* Player::create(const char *name)
+//{
+////	velocity = ccp(0.0, 0.0);
+//	return (Player*)CCSprite::create(name);
+//}
+
+bool Player::collisionBoundingBox() {
+  CCRect collisionBox = this->boundingBox();
+  CCPoint diff = ccpSub(this->desiredPosition, this->getPosition());
+  CCRect *returnBoundingBox;
+  returnBoundingBox->setRect(collisionBox.getMinX() + diff.x, collisionBox.getMinY() + diff.y, collisionBox.getMaxX()-collisionBox.getMinX(), collisionBox.getMaxY()-collisionBox.getMinY());
+  return returnBoundingBox;
+//  return CCRect::intersectsRect(this->boundingBox, 2, 0);
 }
 
 void Player::update1(float dt)
@@ -25,6 +40,7 @@ void Player::update1(float dt)
  
     // 5
 	this->setPosition( ccpAdd(this->getPosition(), stepVelocity));
+	CCSprite::update(dt);
 }
 
 //Player Player::initWithFile(CCString filename) {
