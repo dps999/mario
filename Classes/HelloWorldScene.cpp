@@ -5,6 +5,7 @@ using namespace cocos2d;
 CCTMXTiledMap *map;
 Player *player;
 CCTMXLayer *walls;
+CCPoint velocity;
 
 CCScene* HelloWorld::scene()
 {
@@ -44,7 +45,7 @@ bool HelloWorld::init()
 		map = CCTMXTiledMap::create("SuperKoalio/level1.tmx");
 		this->addChild(map);
 		walls = map->layerNamed("walls");
-		
+		velocity = ccp(0.0, 0.0);
 		player =(Player*) CCSprite::create("SuperKoalio/koalio_stand.png");
 		//player->init1();
 
@@ -109,7 +110,20 @@ bool HelloWorld::init()
 
 void HelloWorld::update(float dt)
 {
+		// 2
+    CCPoint gravity = ccp(0.0, -450.0);
+ 
+    // 3
+    CCPoint gravityStep = ccpMult(gravity, dt);
+ 
+    // 4
+    velocity = ccpAdd(velocity, gravityStep);
+    CCPoint stepVelocity = ccpMult(velocity, dt);
+ 
+    // 5
+	player->setPosition( ccpAdd(this->getPosition(), stepVelocity));
 	getSurroundingTilesAtPosition(player->getPosition(), walls);
+
 //	player->update1(dt);
 }
 
@@ -172,6 +186,74 @@ CCArray* HelloWorld::getSurroundingTilesAtPosition(CCPoint position, CCTMXLayer*
   } //7
  
   return (CCArray *)gids;
+}
+
+CCRect CCRectIntersection( CCRect r1,  CCRect r2)
+{
+	CCRect intersection = CCRectMake(MAX(r1.getMinX(),r2.getMinX()), MAX(r1.getMinY(),r2.getMinY()),0,0);
+	intersection.size.width = MIN(r1.getMaxX(), r2.getMaxX()) - intersection.getMinX();
+	intersection.size.height = MIN(r1.getMaxY(), r2.getMaxY()) - intersection.getMinY();
+	return intersection;
+}
+
+void HelloWorld::checkForAndResolveCollisions(Player *p )
+{  
+
+  CCArray *tiles = this->getSurroundingTilesAtPosition(p->getPosition(),walls); //1
+ 
+ // for (CCDictionary *dic in tiles) {
+  CCObject *d = NULL;
+  CCARRAY_FOREACH(tiles, d)
+  {
+	CCDictionary *dic = (CCDictionary *)d;
+    CCRect pRect = p->collisionBoundingBox(); //2
+ 
+    int gid = ((CCString*)dic->objectForKey("gid"))->intValue(); //3
+ 
+    if (gid) {
+		CCRect tileRect = CCRectMake(((CCString*)dic->objectForKey("x"))->floatValue(), ((CCString*)dic->objectForKey("y"))->floatValue(), map->getTileSize().width, map->getTileSize().height); //4
+      if (pRect.intersectsRect( tileRect)) {
+        CCRect intersection = CCRectIntersection(pRect, tileRect); //5
+ 
+        int tileIndx = tiles->indexOfObject(dic); //6
+ 
+        if (tileIndx == 0) {
+          //Ячейка прямо под Коалой
+          p->desiredPosition = ccp(p->desiredPosition.x, p->desiredPosition.y + intersection.size.height);
+        } else if (tileIndx == 1) {
+          //Ячейка прямо над Коалой
+          p->desiredPosition = ccp(p->desiredPosition.x, p->desiredPosition.y - intersection.size.height);
+        } else if (tileIndx == 2) {
+          //Ячейка слева от Коалы
+          p->desiredPosition = ccp(p->desiredPosition.x + intersection.size.width, p->desiredPosition.y);
+        } else if (tileIndx == 3) {
+          //Ячейка справа от Коалы
+          p->desiredPosition = ccp(p->desiredPosition.x - intersection.size.width, p->desiredPosition.y);
+        } else {
+          if (intersection.size.width > intersection.size.height) { //7
+            //Ячейка диагональна, но решаем проблему вертикально
+            float intersectionHeight;
+            if (tileIndx > 5) {
+              intersectionHeight = intersection.size.height;
+            } else {
+              intersectionHeight = -intersection.size.height;
+            }
+            p->desiredPosition = ccp(p->desiredPosition.x, p->desiredPosition.y + intersection.size.height );
+          } else {
+          	//Ячейка диагональна, но решаем проблему горизонтально
+            float resolutionWidth;
+            if (tileIndx == 6 || tileIndx == 4) {
+              resolutionWidth = intersection.size.width;
+            } else {
+              resolutionWidth = -intersection.size.width;
+            }
+            p->desiredPosition = ccp(p->desiredPosition.x , p->desiredPosition.y + resolutionWidth);
+          } 
+        } 
+      }
+    } 
+  }
+  p->setPosition( p->desiredPosition); //7
 }
 
 void HelloWorld::menuCloseCallback(CCObject* pSender)

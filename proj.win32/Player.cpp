@@ -17,11 +17,11 @@ void Player::init1()
 //	return (Player*)CCSprite::create(name);
 //}
 
-bool Player::collisionBoundingBox() {
+CCRect Player::collisionBoundingBox() {
   CCRect collisionBox = this->boundingBox();
   CCPoint diff = ccpSub(this->desiredPosition, this->getPosition());
-  CCRect *returnBoundingBox;
-  returnBoundingBox->setRect(collisionBox.getMinX() + diff.x, collisionBox.getMinY() + diff.y, collisionBox.getMaxX()-collisionBox.getMinX(), collisionBox.getMaxY()-collisionBox.getMinY());
+  CCRect returnBoundingBox;
+  returnBoundingBox.setRect(collisionBox.getMinX() + diff.x, collisionBox.getMinY() + diff.y, collisionBox.getMaxX()-collisionBox.getMinX(), collisionBox.getMaxY()-collisionBox.getMinY());
   return returnBoundingBox;
 //  return CCRect::intersectsRect(this->boundingBox, 2, 0);
 }

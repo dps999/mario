@@ -6,7 +6,7 @@ public:
 //	Player initWithFile(cocos2d::CCString filename);
 	void update1(float dt);
 	cocos2d::CCPoint desiredPosition;
-	bool collisionBoundingBox();
+	cocos2d::CCRect collisionBoundingBox();
 //	Player* create(const char *name);
 	//void create(const char *name);
 	void init1();
