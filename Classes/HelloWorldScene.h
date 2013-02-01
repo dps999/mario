@@ -3,6 +3,7 @@
 
 #include "cocos2d.h"
 #include "Player.h"
+#include "SimpleAudioEngine.h"
 
 class HelloWorld : public cocos2d::CCLayer
 {
@@ -10,7 +11,11 @@ public:
 	void update1(float dt);
 	void ccTouchesEnded(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;
 	void ccTouchesBegan(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;
+	void gameOver(bool won);
+	void checkForWin();
+	bool _gameOver;
 	void handleHazardCollisions(Player *p);
+	void menuSettings(cocos2d::CCObject* pSender);
 	//void ccTouchesMoved(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;
 	void setViewpointCenter(cocos2d::CCPoint position );
 	cocos2d::CCArray* getSurroundingTilesAtPosition(cocos2d::CCPoint position, cocos2d::CCTMXLayer* layer);

@@ -7,6 +7,7 @@ public:
 	void update1(float dt);
 	bool onGround;
 	bool forwardMarch;
+	bool backwardMarch;
 	bool mightAsWellJump;
 	cocos2d::CCPoint desiredPosition;
 	cocos2d::CCRect collisionBoundingBox();

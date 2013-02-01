@@ -1,5 +1,6 @@
 #include "HelloWorldScene.h"
 #include "Player.h"
+#include "SimpleAudioEngine.h"
 
 using namespace cocos2d;
 CCTMXTiledMap *map;
@@ -7,6 +8,7 @@ Player *player;
 CCTMXLayer *walls;
 CCTMXLayer *hazards;
 CCPoint velocity;
+
 
 CCScene* HelloWorld::scene()
 {
@@ -40,9 +42,12 @@ bool HelloWorld::init()
         //////////////////////////////////////////////////////////////////////////
 
         CC_BREAK_IF(! CCLayer::init());
-
-
+		_gameOver=false;
+		CocosDenshion::SimpleAudioEngine::sharedEngine()->playBackgroundMusic("SuperKoalio/level1.mp3");    
+		this->setKeypadEnabled( true);
 		this->setTouchEnabled( true);
+		CCLayerColor *blueSky = CCLayerColor::create( ccc4(100, 100, 250, 255));
+		this->addChild(blueSky);
 		map = CCTMXTiledMap::create("SuperKoalio/level1.tmx");
 		this->addChild(map);
 		walls = map->layerNamed("walls");
@@ -51,6 +56,7 @@ bool HelloWorld::init()
 		player =(Player*) CCSprite::create("SuperKoalio/koalio_stand.png");
 		player->forwardMarch = false;
 		player->mightAsWellJump = false;
+		player->backwardMarch = false;
 		//player->init1();
 
 		player->setPosition(ccp(100,150));
@@ -114,6 +120,35 @@ bool HelloWorld::init()
 
 void HelloWorld::update1(float dt)
 {
+	 if (_gameOver) {
+	  return;
+	 }
+	 if (GetKeyState(VK_RIGHT) & 0x8000)
+     {
+            player->forwardMarch = true;
+			player->backwardMarch = false;
+     }
+	 else if (GetKeyState(VK_LEFT) & 0x8000)
+     {
+            player->backwardMarch = true;
+			player->forwardMarch = false;
+     }
+	 else
+	 {
+		 player->backwardMarch = false;
+		 player->forwardMarch = false;
+	 }
+
+
+	 if (GetKeyState(VK_SPACE) & 0x8000)
+     {
+            player->mightAsWellJump = true;
+     }
+	 else
+	 {
+		 player->mightAsWellJump = false;
+	 }
+
 
 		// 2
     CCPoint gravity = ccp(0.0, -450.0);
@@ -130,11 +165,12 @@ void HelloWorld::update1(float dt)
     velocity = ccpAdd(velocity, gravityStep);
     velocity = ccp(velocity.x * 0.90, velocity.y); //2
 
-		CCPoint jumpForce = ccp(0.0, 310.0);
+		CCPoint jumpForce = ccp(0.0, 2310.0);
 	  float jumpCutoff = 150.0;
  
 	  if (player->mightAsWellJump && player->onGround) {
 		velocity = ccpAdd(velocity, jumpForce);
+		CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("SuperKoalio/jump.wav");
 	  } else if (!player->mightAsWellJump && velocity.y > jumpCutoff) {
 		velocity = ccp(velocity.x, jumpCutoff);
 	  }
@@ -142,14 +178,26 @@ void HelloWorld::update1(float dt)
     if (player->forwardMarch) {
         velocity = ccpAdd(velocity, forwardStep);
     } //3
+
+    if (player->backwardMarch) {
+        velocity = ccpAdd(velocity, forwardStep);
+		
+    } //3
  
     CCPoint minMovement = ccp(0.0, -450.0);
     CCPoint maxMovement = ccp(120.0, 250.0);
     CCPoint stepVelocity = ccpMult(velocity, dt);
 	velocity = ccpClamp(velocity, minMovement, maxMovement); //4
+	 if (player->backwardMarch) {
+   
+		stepVelocity = ccp(-stepVelocity.x, velocity.y);
+    } //3
+ 
     // 5
 	player->desiredPosition = ( ccpAdd(player->getPosition(), stepVelocity));
 //	getSurroundingTilesAtPosition(player->getPosition(), walls);
+	this->handleHazardCollisions(player);
+	this->checkForWin();
 	this->checkForAndResolveCollisions(player);
 	this->setViewpointCenter(player->getPosition());
 //	player->update1(dt);
@@ -160,16 +208,16 @@ void HelloWorld::handleHazardCollisions(Player *p)
 	CCArray *tiles = this->getSurroundingTilesAtPosition(p->getPosition(), hazards );
 //  for (CCDictionary *dic in tiles) {
 	CCObject *d = NULL;
-  CCARRAY_FOREACH(tiles, d)
-  {
-	CCDictionary *dic = (CCDictionary *)d;
-    CCRect tileRect = CCRectMake([[dic objectForKey:@"x"] floatValue], [[dic objectForKey:@"y"] floatValue], map.tileSize.width, map.tileSize.height);
-    CCRect pRect = p->collisionBoundingBox();
+	  CCARRAY_FOREACH(tiles, d)
+	  {
+		CCDictionary *dic = (CCDictionary *)d;
+		CCRect tileRect = CCRectMake(((CCString*)dic->objectForKey("x"))->floatValue(), ((CCString*)dic->objectForKey("y"))->floatValue(), map->getTileSize().width, map->getTileSize().height);
+		CCRect pRect = p->collisionBoundingBox();
  
-    if ([[dic objectForKey:@"gid"] intValue] && CGRectIntersectsRect(pRect, tileRect)) {
-      [self gameOver:0];
-    }
-  }
+		if (((CCString*)dic->objectForKey("gid"))->intValue() && pRect.intersectsRect( tileRect)) {
+		  this->gameOver(0);
+		}
+	  }
 }
 
 void HelloWorld::setViewpointCenter(CCPoint position )
@@ -215,7 +263,12 @@ CCArray* HelloWorld::getSurroundingTilesAtPosition(CCPoint position, CCTMXLayer*
     int c = i % 3;
     int r = (int)(i / 3);
     CCPoint tilePos = ccp(plPos.x + (c - 1), plPos.y + (r - 1));
- 
+	if (tilePos.y > (map->getMapSize().height - 1))
+	{
+		//fallen in a hole
+		this->gameOver(0);
+		return NULL;
+	}
     int tgid = layer->tileGIDAt(tilePos); //4
  
     CCRect tileRect = tileRectFromTileCoords(tilePos); //5
@@ -267,6 +320,9 @@ void HelloWorld::checkForAndResolveCollisions(Player *p )
 {  
 
   CCArray *tiles = this->getSurroundingTilesAtPosition(p->getPosition(),walls); //1
+  if (_gameOver) {
+    return;
+  }
    p->onGround = false;
  
  // for (CCDictionary *dic in tiles) {
@@ -370,6 +426,47 @@ void HelloWorld::ccTouchesEnded(CCSet *touches, CCEvent *event)
     } else {
       player->mightAsWellJump = false;
     }
+}
+
+void HelloWorld::checkForWin()
+{
+  if (player->getPosition().x > 3130.0) {
+    this->gameOver(1);
+  }
+}
+
+void HelloWorld::gameOver(bool won)
+{
+    _gameOver = true;
+	CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("SuperKoalio/hurt.wav"); 
+    CCString *gameText;
+ 
+    if (won) {
+		gameText = CCString::create("You Won!");
+    } else {
+        gameText = CCString::create("You have Died!");
+    }
+ 
+ // CCLabelTTF *diedLabel = [[CCLabelTTF alloc] initWithString:gameText fontName:@"Marker Felt" fontSize:40];
+  CCLabelTTF *diedLabel = CCLabelTTF::create(gameText->getCString(), "Marker Felt", 40);
+  diedLabel->setPosition(ccp(240, 200));
+  CCMoveBy *slideIn = CCMoveBy::create(1.0 ,ccp(0, 250));
+  CCMenuItemImage *replay = CCMenuItemImage::create("SuperKoalio/replay.png" ,"SuperKoalio/replay.png" ,"SuperKoalio/replay.png", this, menu_selector(HelloWorld::menuSettings));
+
+ 
+  CCArray *menuItems = CCArray::arrayWithObject(replay);
+  CCMenu *menu = CCMenu::createWithArray (menuItems);
+  menu->setPosition( ccp(240, -100));
+ 
+  this->addChild(menu);
+  this->addChild(diedLabel);
+ 
+  menu->runAction(slideIn);
+}
+
+void HelloWorld::menuSettings(CCObject* pSender)
+{
+     CCDirector::sharedDirector()->replaceScene(CCTransitionFade::transitionWithDuration(1.0, HelloWorld::scene()));
 }
 
 void HelloWorld::menuCloseCallback(CCObject* pSender)
