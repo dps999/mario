@@ -7,7 +7,12 @@
 class HelloWorld : public cocos2d::CCLayer
 {
 public:
-	void update(float dt);
+	void update1(float dt);
+	void ccTouchesEnded(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;
+	void ccTouchesBegan(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;
+	void handleHazardCollisions(Player *p);
+	//void ccTouchesMoved(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;
+	void setViewpointCenter(cocos2d::CCPoint position );
 	cocos2d::CCArray* getSurroundingTilesAtPosition(cocos2d::CCPoint position, cocos2d::CCTMXLayer* layer);
 	void checkForAndResolveCollisions(Player *p );
     // Here's a difference. Method 'init' in cocos2d-x returns bool, instead of returning 'id' in cocos2d-iphone

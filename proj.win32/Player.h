@@ -5,6 +5,9 @@ class Player : public cocos2d::CCSprite
 public:
 //	Player initWithFile(cocos2d::CCString filename);
 	void update1(float dt);
+	bool onGround;
+	bool forwardMarch;
+	bool mightAsWellJump;
 	cocos2d::CCPoint desiredPosition;
 	cocos2d::CCRect collisionBoundingBox();
 //	Player* create(const char *name);
