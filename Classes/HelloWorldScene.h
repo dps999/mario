@@ -8,6 +8,13 @@
 class HelloWorld : public cocos2d::CCLayer
 {
 public:
+	cocos2d::CCTMXTiledMap *map;
+	Player *player;
+	cocos2d::CCSprite *player1;
+	cocos2d::CCTMXLayer *walls;
+	cocos2d::CCTMXLayer *hazards;
+	cocos2d::CCPoint tileCoordForPosition(cocos2d::CCPoint position) ;
+	cocos2d::CCRect tileRectFromTileCoords(cocos2d::CCPoint tileCoords);
 	void update1(float dt);
 	void ccTouchesEnded(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;
 	void ccTouchesBegan(cocos2d::CCSet *touches, cocos2d::CCEvent *event) ;

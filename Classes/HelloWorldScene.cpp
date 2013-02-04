@@ -3,11 +3,8 @@
 #include "SimpleAudioEngine.h"
 
 using namespace cocos2d;
-CCTMXTiledMap *map;
-Player *player;
-CCTMXLayer *walls;
-CCTMXLayer *hazards;
-CCPoint velocity;
+USING_NS_CC;
+
 
 
 CCScene* HelloWorld::scene()
@@ -52,12 +49,9 @@ bool HelloWorld::init()
 		this->addChild(map);
 		walls = map->layerNamed("walls");
 		hazards = map->layerNamed("hazards");
-		velocity = ccp(0.0, 0.0);
-		player =(Player*) CCSprite::create("SuperKoalio/koalio_stand.png");
-		player->forwardMarch = false;
-		player->mightAsWellJump = false;
-		player->backwardMarch = false;
-		//player->init1();
+
+
+		player = Player::spriteWithFile("SuperKoalio/koalio_stand.png");
 
 		player->setPosition(ccp(100,150));
 		map->addChild(player, 15);
@@ -123,84 +117,42 @@ void HelloWorld::update1(float dt)
 	 if (_gameOver) {
 	  return;
 	 }
+	 player->update1(dt);
 	 if (GetKeyState(VK_RIGHT) & 0x8000)
      {
-            player->forwardMarch = true;
-			player->backwardMarch = false;
+            player->setForwardMarch( true);
+			player->setBackwardMarch( false);
      }
 	 else if (GetKeyState(VK_LEFT) & 0x8000)
      {
-            player->backwardMarch = true;
-			player->forwardMarch = false;
+            player->setBackwardMarch( true);
+			player->setForwardMarch( false);
      }
 	 else
 	 {
-		 player->backwardMarch = false;
-		 player->forwardMarch = false;
+		 player->setBackwardMarch( false);
+		 player->setForwardMarch( false);
 	 }
 
 
 	 if (GetKeyState(VK_SPACE) & 0x8000)
      {
-            player->mightAsWellJump = true;
+            player->setMightAsWellJump( true);
      }
 	 else
 	 {
-		 player->mightAsWellJump = false;
+		 player->setMightAsWellJump( false);
 	 }
 
 
-		// 2
-    CCPoint gravity = ccp(0.0, -450.0);
- 
-    // 3
-    CCPoint gravityStep = ccpMult(gravity, dt);
- 
-    // 4
-    velocity = ccpAdd(velocity, gravityStep);
 
-	CCPoint forwardMove = ccp(800.0, 0.0);
-    CCPoint forwardStep = ccpMult(forwardMove, dt); //1
- 
-    velocity = ccpAdd(velocity, gravityStep);
-    velocity = ccp(velocity.x * 0.90, velocity.y); //2
-
-		CCPoint jumpForce = ccp(0.0, 2310.0);
-	  float jumpCutoff = 150.0;
- 
-	  if (player->mightAsWellJump && player->onGround) {
-		velocity = ccpAdd(velocity, jumpForce);
-		CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("SuperKoalio/jump.wav");
-	  } else if (!player->mightAsWellJump && velocity.y > jumpCutoff) {
-		velocity = ccp(velocity.x, jumpCutoff);
-	  }
- 
-    if (player->forwardMarch) {
-        velocity = ccpAdd(velocity, forwardStep);
-    } //3
-
-    if (player->backwardMarch) {
-        velocity = ccpAdd(velocity, forwardStep);
-		
-    } //3
- 
-    CCPoint minMovement = ccp(0.0, -450.0);
-    CCPoint maxMovement = ccp(120.0, 250.0);
-    CCPoint stepVelocity = ccpMult(velocity, dt);
-	velocity = ccpClamp(velocity, minMovement, maxMovement); //4
-	 if (player->backwardMarch) {
-   
-		stepVelocity = ccp(-stepVelocity.x, velocity.y);
-    } //3
- 
-    // 5
-	player->desiredPosition = ( ccpAdd(player->getPosition(), stepVelocity));
 //	getSurroundingTilesAtPosition(player->getPosition(), walls);
+	
 	this->handleHazardCollisions(player);
 	this->checkForWin();
 	this->checkForAndResolveCollisions(player);
 	this->setViewpointCenter(player->getPosition());
-//	player->update1(dt);
+
 }
 
 void HelloWorld::handleHazardCollisions(Player *p)
@@ -238,7 +190,7 @@ void HelloWorld::setViewpointCenter(CCPoint position )
 	map->setPosition(viewPoint);
  }
 
-CCPoint tileCoordForPosition(CCPoint position) 
+CCPoint HelloWorld::tileCoordForPosition(CCPoint position) 
 {
   float x = floor(position.x / map->getTileSize().width);
   float levelHeightInPixels = map->getMapSize().height * map->getTileSize().height;
@@ -246,7 +198,7 @@ CCPoint tileCoordForPosition(CCPoint position)
   return ccp(x, y);
 }
 
-CCRect tileRectFromTileCoords(CCPoint tileCoords)
+CCRect HelloWorld::tileRectFromTileCoords(CCPoint tileCoords)
 {
   float levelHeightInPixels = map->getMapSize().height * map->getTileSize().height;
   CCPoint origin = ccp(tileCoords.x * map->getTileSize().width, levelHeightInPixels - ((tileCoords.y + 1) * map->getTileSize().height));
@@ -344,13 +296,13 @@ void HelloWorld::checkForAndResolveCollisions(Player *p )
         if (tileIndx == 0) {
           //Ячейка прямо под Коалой
           p->desiredPosition = ccp(p->desiredPosition.x, p->desiredPosition.y + intersection.size.height);
-          velocity = ccp(velocity.x, 0.0); //////Здесь
+          p->velocity = ccp(p->velocity.x, 0.0); //////Здесь
           p->onGround = true; //////Здесь
 
         } else if (tileIndx == 1) {
           //Ячейка прямо над Коалой
           p->desiredPosition = ccp(p->desiredPosition.x, p->desiredPosition.y - intersection.size.height);
-		  velocity = ccp(velocity.x, 0.0); //////Здесь
+		  p->velocity = ccp(p->velocity.x, 0.0); //////Здесь
         } else if (tileIndx == 2) {
           //Ячейка слева от Коалы
           p->desiredPosition = ccp(p->desiredPosition.x + intersection.size.width, p->desiredPosition.y);
@@ -360,7 +312,7 @@ void HelloWorld::checkForAndResolveCollisions(Player *p )
         } else {
           if (intersection.size.width > intersection.size.height) { //7
             //Ячейка диагональна, но решаем проблему вертикально
-			velocity = ccp(velocity.x, 0.0); //////Здесь
+			p->velocity = ccp(p->velocity.x, 0.0); //////Здесь
             float intersectionHeight;
             if (tileIndx > 5) {
               intersectionHeight = intersection.size.height;
@@ -394,9 +346,9 @@ void HelloWorld::ccTouchesBegan(CCSet *touches, CCEvent *event)
 	touchLocation = CCDirector::sharedDirector()->convertToGL(touchLocation);
 //	touchLocation = this->convertToNodeSpace(touchLocation);
     if (touchLocation.x < 240) {
-      player->forwardMarch = true;
+      player->setForwardMarch( true);
     } else {
-      player->mightAsWellJump = true;
+      player->setMightAsWellJump( true);
     }
 }
 
@@ -422,9 +374,9 @@ void HelloWorld::ccTouchesEnded(CCSet *touches, CCEvent *event)
 	touchLocation = CCDirector::sharedDirector()->convertToGL(touchLocation);
 //	touchLocation = this->convertToNodeSpace(touchLocation);
     if (touchLocation.x < 240) {
-      player->forwardMarch = false;
+      player->setForwardMarch( false);
     } else {
-      player->mightAsWellJump = false;
+      player->setMightAsWellJump( false);
     }
 }
 
@@ -466,7 +418,7 @@ void HelloWorld::gameOver(bool won)
 
 void HelloWorld::menuSettings(CCObject* pSender)
 {
-     CCDirector::sharedDirector()->replaceScene(CCTransitionFade::transitionWithDuration(1.0, HelloWorld::scene()));
+     CCDirector::sharedDirector()->replaceScene(CCTransitionFade::transitionWithDuration(1.0, scene()));
 }
 
 void HelloWorld::menuCloseCallback(CCObject* pSender)

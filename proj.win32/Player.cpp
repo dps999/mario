@@ -1,21 +1,23 @@
 #include "Player.h"
+#include "SimpleAudioEngine.h"
 using namespace cocos2d;
 
-Player::Player(void)
+Player* Player::spriteWithFile(const char *pszFileName)
 {
-	
-}
+    Player *pobSprite = new Player();
+    if (pobSprite && pobSprite->initWithFile(pszFileName))
+    {
+        pobSprite->scheduleUpdate();
+        pobSprite->autorelease();
+		pobSprite->setForwardMarch(false);
+		pobSprite->setMightAsWellJump(false);
+		pobSprite->setBackwardMarch(false);
 
-void Player::init1()
-{
-	this->velocity = ccp(0.0, 0.0);
+        return pobSprite;
+    }
+    CC_SAFE_DELETE(pobSprite);
+	return NULL;
 }
-
-//Player* Player::create(const char *name)
-//{
-////	velocity = ccp(0.0, 0.0);
-//	return (Player*)CCSprite::create(name);
-//}
 
 CCRect Player::collisionBoundingBox() {
   CCRect collisionBox = this->boundingBox();
@@ -28,7 +30,7 @@ CCRect Player::collisionBoundingBox() {
 
 void Player::update1(float dt)
 {
-	// 2
+		// 2
     CCPoint gravity = ccp(0.0, -450.0);
  
     // 3
@@ -36,17 +38,47 @@ void Player::update1(float dt)
  
     // 4
     velocity = ccpAdd(velocity, gravityStep);
+
+	CCPoint forwardMove = ccp(800.0, 0.0);
+    CCPoint forwardStep = ccpMult(forwardMove, dt); //1
+ 
+    velocity = ccpAdd(velocity, gravityStep);
+    velocity = ccp(velocity.x * 0.90, velocity.y); //2
+
+		CCPoint jumpForce = ccp(0.0, 2310.0);
+	  float jumpCutoff = 150.0;
+ 
+	  if (mightAsWellJump && onGround) {
+		velocity = ccpAdd(velocity, jumpForce);
+		CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("SuperKoalio/jump.wav");
+	  } else if (!mightAsWellJump && velocity.y > jumpCutoff) {
+		velocity = ccp(velocity.x, jumpCutoff);
+	  }
+ 
+    if (forwardMarch) {
+        velocity = ccpAdd(velocity, forwardStep);
+    } //3
+
+    if (backwardMarch) {
+        velocity = ccpAdd(velocity, forwardStep);
+		
+    } //3
+ 
+    CCPoint minMovement = ccp(0.0, -450.0);
+    CCPoint maxMovement = ccp(120.0, 250.0);
     CCPoint stepVelocity = ccpMult(velocity, dt);
+	velocity = ccpClamp(velocity, minMovement, maxMovement); //4
+	 if (backwardMarch) {
+   
+		stepVelocity = ccp(-stepVelocity.x, velocity.y);
+    } //3
  
     // 5
-	this->setPosition( ccpAdd(this->getPosition(), stepVelocity));
-	CCSprite::update(dt);
+	desiredPosition = ( ccpAdd(getPosition(), stepVelocity));
 }
 
 //Player Player::initWithFile(CCString filename) {
 //    this->initWithFile(filename);
 //    return this;
 //}
-Player::~Player(void)
-{
-}
+

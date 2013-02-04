@@ -5,17 +5,20 @@ class Player : public cocos2d::CCSprite
 public:
 //	Player initWithFile(cocos2d::CCString filename);
 	void update1(float dt);
+//	virtual void update(float dt);
 	bool onGround;
-	bool forwardMarch;
-	bool backwardMarch;
-	bool mightAsWellJump;
+	static Player* spriteWithFile(const char *pszFileName);
+	CC_SYNTHESIZE(bool, forwardMarch, ForwardMarch);
+	CC_SYNTHESIZE(bool, backwardMarch, BackwardMarch);
+	CC_SYNTHESIZE(bool, mightAsWellJump, MightAsWellJump);
+
 	cocos2d::CCPoint desiredPosition;
 	cocos2d::CCRect collisionBoundingBox();
 //	Player* create(const char *name);
 	//void create(const char *name);
 	void init1();
 	cocos2d::CCPoint velocity;
-	Player(void);
-	~Player(void);
+	CREATE_FUNC(Player);
+	
 };
 
