@@ -40,7 +40,7 @@ bool HelloWorld::init()
 
         CC_BREAK_IF(! CCLayer::init());
 		_gameOver=false;
-		CocosDenshion::SimpleAudioEngine::sharedEngine()->playBackgroundMusic("SuperKoalio/level1.mp3");    
+	//	CocosDenshion::SimpleAudioEngine::sharedEngine()->playBackgroundMusic("SuperKoalio/level1.mp3");    
 		this->setKeypadEnabled( true);
 		this->setTouchEnabled( true);
 		CCLayerColor *blueSky = CCLayerColor::create( ccc4(100, 100, 250, 255));
@@ -50,11 +50,11 @@ bool HelloWorld::init()
 		walls = map->layerNamed("walls");
 		hazards = map->layerNamed("hazards");
 
-
-		player = Player::spriteWithFile("SuperKoalio/koalio_stand.png");
-
-		player->setPosition(ccp(100,150));
+		player = Player::spriteWithFile("SuperKoalio/koalio_stand-hd.png");
+	//	player = Player::spriteWithFile("SuperKoalio/dino.png", 2, 3);
+		player->setPosition(ccp(100,300));
 		map->addChild(player, 15);
+
 
 		this->schedule( schedule_selector(HelloWorld::update1) );
 

@@ -8,6 +8,8 @@ public:
 //	virtual void update(float dt);
 	bool onGround;
 	static Player* spriteWithFile(const char *pszFileName);
+	static Player* spriteWithFile(const char *pszFileName, int columns, int rows);
+
 	CC_SYNTHESIZE(bool, forwardMarch, ForwardMarch);
 	CC_SYNTHESIZE(bool, backwardMarch, BackwardMarch);
 	CC_SYNTHESIZE(bool, mightAsWellJump, MightAsWellJump);
